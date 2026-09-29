@@ -12,14 +12,7 @@ async function ensureSchema() {
   if (ensured) return;
   ensured = true;
   const sql = await getDb();
-  await sql`
-    CREATE TABLE IF NOT EXISTS messages (
-      id SERIAL PRIMARY KEY,
-      role TEXT NOT NULL,
-      text TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
+  await sql`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, role TEXT NOT NULL, text TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW())`;
 }
 
 export async function GET(req: NextRequest) {
@@ -30,8 +23,6 @@ export async function GET(req: NextRequest) {
   }
   await ensureSchema();
   const q = await getDb();
-  const { rows } = await q`
-    SELECT id, role, text, created_at FROM messages ORDER BY id ASC
-  `;
-  return Response.json({ v: "destructure-test", count: (rows as unknown[]).length, rows });
+  const { rows } = await q`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
+  return Response.json(rows);
 }
