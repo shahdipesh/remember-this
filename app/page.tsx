@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AiChat, useAsStreamAdapter, type ChatItem } from "@nlux/react";
 import "@nlux/themes/nova.css";
+import "./design-system.css";
 
 type Msg = {
   id: number;
@@ -10,6 +11,10 @@ type Msg = {
   text: string;
   created_at: string;
 };
+
+// Coral sparkle avatar for the assistant persona.
+const AVATAR_URI =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d97757' d='M12 2c.7 4.8 2.9 7 7.7 7.7-4.8.7-7 2.9-7.7 7.7-.7-4.8-2.9-7-7.7-7.7 4.8-.7 7-2.9 7.7-7.7z'/%3E%3C/svg%3E";
 
 export default function ChatPage() {
   const [initial, setInitial] = useState<ChatItem[] | null>(null);
@@ -73,43 +78,40 @@ export default function ChatPage() {
   });
 
   return (
-    <div
-      style={{
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: 900,
-        margin: "0 auto",
-      }}
-    >
-      <div
-        style={{
-          padding: "12px 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <strong style={{ fontSize: 15 }}>Remember</strong>
-        <a
-          href="/harness"
-          style={{ fontSize: 13, color: "#8a8781", textDecoration: "none" }}
-        >
-          harness
-        </a>
+    <div className="rm-shell">
+      <div className="rm-header">
+        <strong>Remember</strong>
+        <a href="/harness">harness</a>
       </div>
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="rm-chat">
         {initial === null ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#8a8781" }}>
-            Loading…
-          </div>
+          <div className="rm-loading">Loading…</div>
         ) : (
           <AiChat
             adapter={adapter}
             initialConversation={initial}
             displayOptions={{ colorScheme: "light" }}
-            composerOptions={{ placeholder: "Message…" }}
-            conversationOptions={{ historyPayloadSize: "max" }}
+            personaOptions={{
+              assistant: {
+                name: "Remember",
+                tagline: "Tell me anything — I'll keep it in mind.",
+                avatar: AVATAR_URI,
+              },
+            }}
+            composerOptions={{ placeholder: "Message Remember…" }}
+            conversationOptions={{
+              historyPayloadSize: "max",
+              conversationStarters: [
+                {
+                  prompt: "Remember that my favorite food is pizza.",
+                  label: "Remember a fact",
+                },
+                {
+                  prompt: "What do you remember about me?",
+                  label: "Recall memories",
+                },
+              ],
+            }}
           />
         )}
       </div>

@@ -1,0 +1,159 @@
+/**
+ * Remember — Design System v1
+ * Claude-inspired tokens, applied to the nlux chat library.
+ * Approach: tokens first (this file), components consume them.
+ */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  /* Color */
+  --rm-paper: #f4f2ed;        /* warm paper, app background */
+  --rm-surface: #fffdf9;      /* cards, composer */
+  --rm-ink: #1f1e1c;          /* primary text */
+  --rm-muted: #6f6c65;        /* secondary text */
+  --rm-faint: #a9a49a;        /* placeholders, hints */
+  --rm-line: #e6e1d4;         /* borders, dividers */
+  --rm-accent: #d97757;       /* Claude coral */
+  --rm-accent-deep: #bf5f3f;  /* accent hover/active */
+  --rm-user-bubble: #e9e5d9;  /* user message background */
+  --rm-code-bg: #26241f;      /* code blocks */
+  --rm-code-ink: #f4f2ed;
+
+  /* Type */
+  --rm-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --rm-font-serif: Georgia, "Times New Roman", serif;
+
+  /* Shape */
+  --rm-radius-msg: 18px;
+  --rm-radius-pill: 999px;
+
+  /* Elevation */
+  --rm-shadow-soft: 0 2px 14px rgba(60, 50, 35, 0.07);
+}
+
+/* ---------- 2. App shell ---------- */
+.rm-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--rm-paper);
+  font-family: var(--rm-font-sans);
+  color: var(--rm-ink);
+}
+
+.rm-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rm-header strong {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.rm-header a {
+  font-size: 13px;
+  color: var(--rm-muted);
+  text-decoration: none;
+}
+
+.rm-header a:hover {
+  color: var(--rm-ink);
+}
+
+.rm-chat {
+  flex: 1;
+  min-height: 0;
+}
+
+.rm-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--rm-muted);
+  font-size: 14px;
+}
+
+/* ---------- 3. nlux theme mapping (Claude look) ---------- */
+.nlux-AiChat-root.nlux-theme-nova[data-color-scheme="light"] {
+  /* Chat room */
+  --nlux-ChatRoom--BackgroundColor: var(--rm-paper);
+  --nlux-ChatRoom--TextColor: var(--rm-ink);
+  --nlux-ChatRoom--FontFamily: var(--rm-font-sans);
+  --nlux-ChatRoom--FontSize: 15px;
+  --nlux-ChatRoom--LineHeight: 1.65;
+  --nlux-ChatRoom-Divider--Color: var(--rm-line);
+  --nlux-ChatRoom-Loader--Color: var(--rm-accent);
+
+  /* Messages */
+  --nlux-HumanMessage--BackgroundColor: var(--rm-user-bubble);
+  --nlux-HumanMessage--TextColor: var(--rm-ink);
+  --nlux-AiMessage--BackgroundColor: transparent;
+  --nlux-AiMessage--TextColor: var(--rm-ink);
+  --nlux-ChatItem-Message-BubbleLayout--BorderRadius: var(--rm-radius-msg);
+  --nlux-ChatItem-ParticipantName--Color: var(--rm-muted);
+
+  /* Composer */
+  --nlux-PromptInput--TextColor: var(--rm-ink);
+  --nlux-PromptInput-Active--TextColor: var(--rm-ink);
+  --nlux-PromptInput--Placeholder--TextColor: var(--rm-faint);
+  --nlux-PromptInput--FontSize: 15px;
+
+  /* Submit button in accent */
+  --nlux-SubmitButton--TextColor: var(--rm-accent);
+  --nlux-SubmitButton-Active--TextColor: var(--rm-accent-deep);
+  --nlux-SubmitButton-Disabled--TextColor: var(--rm-faint);
+
+  /* Code */
+  --nlux-CodeBlock--BackgroundColor: var(--rm-code-bg);
+  --nlux-CodeBlock--TextColor: var(--rm-code-ink);
+  --nlux-CodeBlock--BorderRadius: 12px;
+  --nlux-InlineCode--BackgroundColor: #ece7d9;
+  --nlux-InlineCode--TextColor: var(--rm-ink);
+
+  /* Conversation starters */
+  --nlux-ConversationStarter--BackgroundColor: var(--rm-surface);
+  --nlux-ConversationStarter--BorderColor: var(--rm-line);
+  --nlux-ConversationStarter--TextColor: var(--rm-ink);
+  --nlux-ConversationStarter--BorderRadius: 14px;
+}
+
+/* ---------- 4. Component polish ---------- */
+
+/* Welcome headline in serif, like Claude's greeting */
+.nlux-AiChat-root .nlux-comp-welcomeMessage-personaName {
+  font-family: var(--rm-font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Floating pill composer */
+.nlux-AiChat-root
+  > .nlux-chatRoom-container
+  > .nlux-composer-container {
+  border-top: none;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  background: transparent;
+}
+
+.nlux-AiChat-root .nlux-comp-composer {
+  background: var(--rm-surface);
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-pill);
+  box-shadow: var(--rm-shadow-soft);
+  padding: 6px 6px 6px 20px;
+}
+
+.nlux-AiChat-root .nlux-comp-composer:focus-within {
+  border-color: var(--rm-accent);
+}
+
+/* Round the avatar */
+.nlux-AiChat-root .nlux-comp-avatar {
+  border-radius: 50%;
+}
