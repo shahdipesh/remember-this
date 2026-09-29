@@ -9,7 +9,7 @@ A minimal personal chat web app: chat UI with SSE-streamed assistant replies
 |---|---|---|
 | `POSTGRES_URL` | Yes | Set automatically by the Vercel Postgres / Neon marketplace integration. |
 | `OPENROUTER_API_KEY` | One of the three | OpenRouter key → uses `OPENROUTER_MODEL` (default `google/gemma-4-26b-a4b-it:free`). Takes precedence when several keys are set. |
-| `OPENROUTER_MODEL` | No | OpenRouter model id. Defaults to `deepseek/deepseek-v4-flash-latest`. |
+| `OPENROUTER_MODEL` | No | OpenRouter model id. Defaults to `deepseek/deepseek-v4.1-flash`. |
 | `GEMINI_API_KEY` | One of the three | Google AI Studio key → uses `gemini-2.0-flash`. |
 | `GROQ_API_KEY` | One of the three | Groq key → uses `llama-3.3-70b-versatile`. |
 | `CRON_SECRET` | Yes | Shared secret for `GET /api/messages?secret=...`. Generate with `openssl rand -hex 32`. |

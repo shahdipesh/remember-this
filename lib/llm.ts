@@ -19,7 +19,7 @@ export function getModel(): Model | null {
     return new ChatOpenAI({
       apiKey: process.env.OPENROUTER_API_KEY,
       configuration: { baseURL: "https://openrouter.ai/api/v1" },
-      model: process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash-latest",
+      model: process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4.1-flash",
     });
   }
   if (process.env.GEMINI_API_KEY) {
