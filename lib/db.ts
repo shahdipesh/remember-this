@@ -31,4 +31,14 @@ export async function ensureSchema() {
     defaultId = Number(rows[0].id);
   }
   await sql`UPDATE messages SET thread_id = ${defaultId} WHERE thread_id IS NULL`;
+  // Staging table for "remember this" entries: the app files them at input
+  // time (/api/chat), and the memory sweep collects unfiled ones.
+  await sql`CREATE TABLE IF NOT EXISTS memory_entries (id SERIAL PRIMARY KEY, text TEXT NOT NULL, thread_id INTEGER, created_at TIMESTAMPTZ DEFAULT NOW(), filed BOOLEAN DEFAULT FALSE)`;
+  // One-time backfill: catch remember-intent messages that arrived before this table existed.
+  await sql`INSERT INTO memory_entries (text, thread_id, created_at) SELECT m.text, m.thread_id, m.created_at FROM messages m WHERE m.role = 'user' AND (m.text ILIKE '%remember%' OR m.text ILIKE '%don''t forget%') AND NOT EXISTS (SELECT 1 FROM memory_entries e WHERE e.text = m.text)`;
+}
+
+/** Same remember-intent rule the sweep used: "remember" or "don't forget". */
+export function hasRememberIntent(text: string): boolean {
+  return /remember|don't forget/i.test(text);
 }

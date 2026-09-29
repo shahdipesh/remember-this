@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ensureSchema, getDb } from "@/lib/db";
+import { ensureSchema, getDb, hasRememberIntent } from "@/lib/db";
 import { buildMessages, getModel, type HistoryItem } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
   }
 
   await sql`INSERT INTO messages (role, text, thread_id) VALUES ('user', ${message}, ${threadId})`;
+
+  // Listen to the input directly: stage "remember this" entries at send time
+  // so the memory sweep just collects them instead of re-scanning messages.
+  if (hasRememberIntent(message)) {
+    await sql`INSERT INTO memory_entries (text, thread_id) VALUES (${message}, ${threadId})`;
+  }
 
   // Full prior history for this thread (exclude the message just inserted).
   // The requirement is the complete conversation as LLM context.
