@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
     diag.sha = process.env.VERCEL_GIT_COMMIT_SHA || "unknown";
     const { createHash } = await import("crypto");
     diag.connHash = createHash("sha256").update(process.env.POSTGRES_URL || "").digest("hex").slice(0, 16);
-    // Connection string components without the password.
-    try {
-      const u2 = new URL((process.env.POSTGRES_URL || "").replace("postgresql://", "https://"));
-      diag.connParts = { user: u2.username, host: u2.hostname, db: u2.pathname, params: u2.search };
-    } catch { diag.connParts = "parse-error"; }
+    // Fresh neon() call, bypassing the shared `sql` proxy/pool.
+    const { neon } = await import("@neondatabase/serverless");
+    const fresh = neon(process.env.POSTGRES_URL!, { fullResults: true });
+    const fr = await fresh(`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`);
+    diag.freshCount = Array.isArray(fr) ? fr.length : (fr as any).rows?.length;
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;
