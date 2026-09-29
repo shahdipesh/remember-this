@@ -11,5 +11,6 @@ export async function POST(req: NextRequest) {
   const { neon } = await import("@neondatabase/serverless");
   const sql = neon(process.env.POSTGRES_URL!, { fullResults: true });
   const r = await sql`DELETE FROM messages`;
-  return Response.json({ deleted: (r as { count?: number }).count ?? "unknown" });
+  const c = await sql`SELECT COUNT(*)::int AS n FROM messages`;
+  return Response.json({ raw: r, countAfter: (c as { rows: { n: number }[] }).rows[0]?.n });
 }
