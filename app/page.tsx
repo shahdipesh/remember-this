@@ -25,6 +25,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     fetch("/api/history")
@@ -41,6 +42,7 @@ export default function ChatPage() {
     const text = input.trim();
     if (!text || sending) return;
     setInput("");
+    resetTa();
     setSending(true);
 
     const userMsg: Msg = {
@@ -115,6 +117,21 @@ export default function ChatPage() {
     }
   }
 
+  function onInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value);
+    // auto-grow like Claude's composer
+    const ta = taRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+    }
+  }
+
+  function resetTa() {
+    const ta = taRef.current;
+    if (ta) ta.style.height = "auto";
+  }
+
   return (
     <div className="chat-wrap">
       <div className="chat-header">
@@ -124,7 +141,13 @@ export default function ChatPage() {
       <div className="chat-log">
         {messages.length === 0 && (
           <div className="chat-empty">
-            Say hi — or tell me something to remember.
+            <svg className="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M12 1.5l2.1 6.9 6.9 2.1-6.9 2.1L12 19.5l-2.1-6.9L3 10.5l6.9-2.1L12 1.5z" />
+              <path d="M19 15.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+              <path d="M5 15.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+            </svg>
+            <p>What should I remember?</p>
+            <span>Tell me anything — I'll keep it in mind.</span>
           </div>
         )}
         {messages.map((m) => (
@@ -141,17 +164,33 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
       <div className="chat-input">
-        <textarea
-          rows={2}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="Message…"
-          disabled={sending}
-        />
-        <button onClick={send} disabled={sending || !input.trim()}>
-          {sending ? "…" : "Send"}
-        </button>
+        <div className="input-pill">
+          <textarea
+            ref={taRef}
+            rows={1}
+            value={input}
+            onChange={onInput}
+            onKeyDown={onKey}
+            placeholder="Message…"
+            disabled={sending}
+          />
+          <button
+            className="send-btn"
+            onClick={send}
+            disabled={sending || !input.trim()}
+            aria-label="Send"
+          >
+            {sending ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <path d="M12 6v12" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <path d="M12 19V5m0 0l-6 6m6-6l6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
