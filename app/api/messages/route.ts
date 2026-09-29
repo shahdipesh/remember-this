@@ -30,8 +30,7 @@ export async function GET(req: NextRequest) {
     messagesTables: tbls.rows,
     current: cur.rows[0],
     user: usr.rows[0],
-    rls: rls.rows,
-    policies: pol.rows,
+    sha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
     count: rows.length,
     rows,
   });
