@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   if (!expected || !secret || secret !== expected) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  await ensureSchema();
+  // TEMP DEBUG: ensureSchema disabled to isolate the issue
+  // await ensureSchema();
   const { rows } = await sql`
     SELECT id, role, text, created_at FROM messages ORDER BY id ASC
   `;
