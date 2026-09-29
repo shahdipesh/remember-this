@@ -12,5 +12,6 @@ export async function POST(req: NextRequest) {
   const sql = neon(process.env.POSTGRES_URL!, { fullResults: true });
   const r = await sql`DELETE FROM messages`;
   const c = await sql`SELECT COUNT(*)::int AS n FROM messages`;
-  return Response.json({ raw: r, countAfter: (c as { rows: { n: number }[] }).rows[0]?.n });
+  const rows = (c as unknown as { rows: { n: number }[] }).rows;
+  return Response.json({ raw: r, countAfter: rows[0]?.n });
 }
