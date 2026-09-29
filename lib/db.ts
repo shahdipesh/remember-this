@@ -13,10 +13,22 @@ export async function getDb() {
   return neon(url, { fullResults: true });
 }
 
-/** Create the messages table on first use (idempotent). */
+/** Create tables on first use (idempotent). */
 export async function ensureSchema() {
   if (ensured) return;
   ensured = true;
   const sql = await getDb();
   await sql`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, role TEXT NOT NULL, text TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW())`;
+  await sql`CREATE TABLE IF NOT EXISTS threads (id SERIAL PRIMARY KEY, title TEXT NOT NULL DEFAULT 'New chat', created_at TIMESTAMPTZ DEFAULT NOW())`;
+  await sql`ALTER TABLE messages ADD COLUMN IF NOT EXISTS thread_id INTEGER REFERENCES threads(id) ON DELETE CASCADE`;
+  // Backfill: make sure there is at least one thread and attach orphan messages to it.
+  const { rows } = await sql`SELECT id FROM threads ORDER BY id ASC LIMIT 1`;
+  let defaultId: number;
+  if (rows.length === 0) {
+    const r = await sql`INSERT INTO threads (title) VALUES ('General') RETURNING id`;
+    defaultId = Number(r.rows[0].id);
+  } else {
+    defaultId = Number(rows[0].id);
+  }
+  await sql`UPDATE messages SET thread_id = ${defaultId} WHERE thread_id IS NULL`;
 }

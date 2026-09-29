@@ -22,15 +22,33 @@ export async function POST(req: NextRequest) {
   if (!message) {
     return Response.json({ error: "message is required" }, { status: 400 });
   }
+  let threadId = Number((body as { thread_id?: unknown })?.thread_id);
 
   await ensureSchema();
   const sql = await getDb();
-  await sql`INSERT INTO messages (role, text) VALUES ('user', ${message})`;
 
-  // Full prior history for context (exclude the message just inserted).
+  // Resolve the thread: reuse the given one, or start a new thread.
+  if (!threadId) {
+    const r = await sql`INSERT INTO threads (title) VALUES ('New chat') RETURNING id`;
+    threadId = Number(r.rows[0].id);
+  } else {
+    const r = await sql`SELECT id, title FROM threads WHERE id = ${threadId}`;
+    if (r.rows.length === 0) {
+      const c = await sql`INSERT INTO threads (title) VALUES ('New chat') RETURNING id`;
+      threadId = Number(c.rows[0].id);
+    } else if (String(r.rows[0].title) === "New chat") {
+      // Name the thread after its first message.
+      const title = message.length > 42 ? message.slice(0, 42) + "…" : message;
+      await sql`UPDATE threads SET title = ${title} WHERE id = ${threadId}`;
+    }
+  }
+
+  await sql`INSERT INTO messages (role, text, thread_id) VALUES ('user', ${message}, ${threadId})`;
+
+  // Full prior history for this thread (exclude the message just inserted).
   // The requirement is the complete conversation as LLM context.
   // NOTE: SQL must not start with whitespace/newline (Neon HTTP API quirk).
-  const { rows } = await sql`SELECT role, text FROM messages ORDER BY id ASC`;
+  const { rows } = await sql`SELECT role, text FROM messages WHERE thread_id = ${threadId} ORDER BY id ASC`;
   const history: HistoryItem[] = rows
     .slice(0, -1) // exclude the message just inserted
     .map((r) => ({ role: String(r.role), text: String(r.text) }));
@@ -42,9 +60,11 @@ export async function POST(req: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Tell the client which thread this reply belongs to.
+      controller.enqueue(frame({ thread_id: threadId }));
       if (!model) {
         controller.enqueue(frame({ token: NO_KEY_MSG }));
-        await sql`INSERT INTO messages (role, text) VALUES ('assistant', ${NO_KEY_MSG})`;
+        await sql`INSERT INTO messages (role, text, thread_id) VALUES ('assistant', ${NO_KEY_MSG}, ${threadId})`;
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
         return;
@@ -62,7 +82,7 @@ export async function POST(req: NextRequest) {
           }
         }
         if (!full) full = "(empty reply)";
-        await sql`INSERT INTO messages (role, text) VALUES ('assistant', ${full})`;
+        await sql`INSERT INTO messages (role, text, thread_id) VALUES ('assistant', ${full}, ${threadId})`;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "unknown error";
         controller.enqueue(frame({ error: `LLM error: ${msg}` }));
