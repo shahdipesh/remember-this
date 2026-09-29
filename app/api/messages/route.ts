@@ -11,14 +11,15 @@ export async function GET(req: NextRequest) {
   }
   // TEMP DEBUG: ensureSchema disabled to isolate the issue
   // await ensureSchema();
-  const { rows } = await sql`
-    SELECT id, role, text, created_at FROM messages ORDER BY id ASC
-  `;
-  // Fresh createPool() (not the shared `sql` proxy).
+  // Fresh createPool() FIRST (not the shared `sql` proxy).
   const { createPool } = await import("@vercel/postgres");
   const pool2 = createPool();
   const r2 = await pool2.sql`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
   const pool2Count = r2.rows.length;
+  // THEN shared sql.
+  const { rows } = await sql`
+    SELECT id, role, text, created_at FROM messages ORDER BY id ASC
+  `;
   const sp = await sql`SHOW search_path`;
   const tbls = await sql`
     SELECT schemaname, tablename FROM pg_tables WHERE tablename = 'messages'
