@@ -28,6 +28,13 @@ export async function GET(req: NextRequest) {
     const usr = await sql`SELECT current_user AS u, session_user AS s`;
     diag.user = usr.rows[0];
     diag.sha = process.env.VERCEL_GIT_COMMIT_SHA || "unknown";
+    const { createHash } = await import("crypto");
+    diag.connHash = createHash("sha256").update(process.env.POSTGRES_URL || "").digest("hex").slice(0, 16);
+    // Connection string components without the password.
+    try {
+      const u2 = new URL((process.env.POSTGRES_URL || "").replace("postgresql://", "https://"));
+      diag.connParts = { user: u2.username, host: u2.hostname, db: u2.pathname, params: u2.search };
+    } catch { diag.connParts = "parse-error"; }
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;

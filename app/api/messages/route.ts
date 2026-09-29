@@ -23,15 +23,23 @@ export async function GET(req: NextRequest) {
     SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'messages'
   `;
   const pol = await sql`SELECT policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename = 'messages'`;
+  const { createHash } = await import("crypto");
+  const connHash = createHash("sha256").update(process.env.POSTGRES_URL || "").digest("hex").slice(0, 16);
+  let connParts: unknown = "parse-error";
+  try {
+    const u2 = new URL((process.env.POSTGRES_URL || "").replace("postgresql://", "https://"));
+    connParts = { user: u2.username, host: u2.hostname, db: u2.pathname, params: u2.search };
+  } catch { /* ignore */ }
   return Response.json({
     v: "messages-v2",
-    dbHost: (process.env.POSTGRES_URL || "").split("@")[1]?.split("/")[0] || "none",
+    sha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+    connHash,
+    connParts,
     searchPath: sp.rows[0]?.search_path,
-    messagesTables: tbls.rows,
     current: cur.rows[0],
     user: usr.rows[0],
-    sha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
     count: rows.length,
     rows,
   });
+}
 }
