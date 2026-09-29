@@ -15,6 +15,10 @@ export async function GET(req: NextRequest) {
   }
   await ensureSchema();
   const sql = await getDb();
+  // TEMP: ?deleteAll=1 to clear table
+  if (req.nextUrl.searchParams.get("deleteAll") === "1") {
+    await sql`DELETE FROM messages WHERE id > 0`;
+  }
   // NOTE: No leading whitespace in SQL (Neon HTTP API quirk).
   const { rows } = await sql`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
   return Response.json(rows);
