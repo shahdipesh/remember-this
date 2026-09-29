@@ -1,27 +1,25 @@
-import { neon } from "@neondatabase/serverless";
-
 let ensured = false;
 
-function getQuery() {
+async function getQuery() {
   const url = process.env.POSTGRES_URL;
   if (!url) throw new Error("POSTGRES_URL is not set");
+  // Dynamic import: matches the pattern verified to work in production.
+  const { neon } = await import("@neondatabase/serverless");
   return neon(url, { fullResults: true });
 }
 
 /**
- * Template tag like @vercel/postgres `sql`, but backed by neon() directly
+ * Template tag like @vercel/postgres `sql`, backed by neon() directly
  * with a fresh query function per call. Avoids shared module-level pool
  * state, which proved unreliable in some route bundles.
  */
-export function db(strings: TemplateStringsArray, ...values: unknown[]) {
-  const q = getQuery();
-  return (q as unknown as (
+export async function db(strings: TemplateStringsArray, ...values: unknown[]) {
+  const q = await getQuery();
+  const result = await (q as unknown as (
     s: TemplateStringsArray,
     ...v: unknown[]
-  ) => Promise<{ rows: Record<string, unknown>[] }>)(
-    strings,
-    ...values
-  );
+  ) => Promise<{ rows: Record<string, unknown>[] }>)(strings, ...values);
+  return result;
 }
 
 /** Create the messages table on first use (idempotent). */
