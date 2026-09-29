@@ -25,6 +25,14 @@ export async function GET(req: NextRequest) {
     diag.messagesTables = tbls.rows;
     const cur = await sql`SELECT current_database() AS db, current_schema() AS sch`;
     diag.current = cur.rows[0];
+    const usr = await sql`SELECT current_user AS u, session_user AS s`;
+    diag.user = usr.rows[0];
+    const rls = await sql`
+      SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'messages'
+    `;
+    diag.rls = rls.rows;
+    const pol = await sql`SELECT policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename = 'messages'`;
+    diag.policies = pol.rows;
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;

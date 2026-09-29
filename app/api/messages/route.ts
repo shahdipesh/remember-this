@@ -18,12 +18,20 @@ export async function GET(req: NextRequest) {
     SELECT schemaname, tablename FROM pg_tables WHERE tablename = 'messages'
   `;
   const cur = await sql`SELECT current_database() AS db, current_schema() AS sch`;
+  const usr = await sql`SELECT current_user AS u, session_user AS s`;
+  const rls = await sql`
+    SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'messages'
+  `;
+  const pol = await sql`SELECT policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename = 'messages'`;
   return Response.json({
     v: "messages-v2",
     dbHost: (process.env.POSTGRES_URL || "").split("@")[1]?.split("/")[0] || "none",
     searchPath: sp.rows[0]?.search_path,
     messagesTables: tbls.rows,
     current: cur.rows[0],
+    user: usr.rows[0],
+    rls: rls.rows,
+    policies: pol.rows,
     count: rows.length,
     rows,
   });
