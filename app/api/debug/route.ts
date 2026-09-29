@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     diag.sha = process.env.VERCEL_GIT_COMMIT_SHA || "unknown";
     const { createHash } = await import("crypto");
     diag.connHash = createHash("sha256").update(process.env.POSTGRES_URL || "").digest("hex").slice(0, 16);
+    const poolConnStr = (sql as unknown as { connectionString?: string }).connectionString || "";
+    diag.poolHash = createHash("sha256").update(poolConnStr).digest("hex").slice(0, 16);
+    diag.poolHashShown = true;
     // Fresh neon() call, bypassing the shared `sql` proxy/pool.
     const { neon } = await import("@neondatabase/serverless");
     const fresh = neon(process.env.POSTGRES_URL!, { fullResults: true });

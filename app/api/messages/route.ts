@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
   const pol = await sql`SELECT policyname, permissive, roles, cmd, qual FROM pg_policies WHERE tablename = 'messages'`;
   const { createHash } = await import("crypto");
   const connHash = createHash("sha256").update(process.env.POSTGRES_URL || "").digest("hex").slice(0, 16);
+  const poolConnStr = (sql as unknown as { connectionString?: string }).connectionString || "";
+  const poolHash = createHash("sha256").update(poolConnStr).digest("hex").slice(0, 16);
   let connParts: unknown = "parse-error";
   try {
     const u2 = new URL((process.env.POSTGRES_URL || "").replace("postgresql://", "https://"));
@@ -35,6 +37,7 @@ export async function GET(req: NextRequest) {
     v: "messages-v2",
     sha: process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
     connHash,
+    poolHash,
     connParts,
     searchPath: sp.rows[0]?.search_path,
     current: cur.rows[0],
