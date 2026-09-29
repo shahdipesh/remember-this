@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
   const { rows } = await sql`
     SELECT id, role, text, created_at FROM messages ORDER BY id ASC
   `;
+  // Fresh neon() bypass, same as debug route.
+  const { neon } = await import("@neondatabase/serverless");
+  const fresh = neon(process.env.POSTGRES_URL!, { fullResults: true });
+  const fr = await fresh(`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`);
+  const freshCount = Array.isArray(fr) ? fr.length : (fr as { rows?: unknown[] }).rows?.length ?? -1;
   const sp = await sql`SHOW search_path`;
   const tbls = await sql`
     SELECT schemaname, tablename FROM pg_tables WHERE tablename = 'messages'
@@ -43,6 +48,7 @@ export async function GET(req: NextRequest) {
     current: cur.rows[0],
     user: usr.rows[0],
     count: rows.length,
+    freshCount,
     rows,
   });
 }
