@@ -41,6 +41,11 @@ export async function GET(req: NextRequest) {
     // Same query but with explicit empty params array (what VercelPool.sql passes).
     const fr2 = await fresh(`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`, []);
     diag.freshEmptyParamsCount = Array.isArray(fr2) ? fr2.length : (fr2 as any).rows?.length;
+    // Exact template-literal whitespace as VercelPool.sql would send.
+    const fr3 = await fresh(`
+      SELECT id, role, text, created_at FROM messages ORDER BY id ASC
+    `, []);
+    diag.freshWhitespaceCount = Array.isArray(fr3) ? fr3.length : (fr3 as any).rows?.length;
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;
