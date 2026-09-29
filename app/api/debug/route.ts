@@ -38,6 +38,9 @@ export async function GET(req: NextRequest) {
     const fresh = neon(process.env.POSTGRES_URL!, { fullResults: true });
     const fr = await fresh(`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`);
     diag.freshCount = Array.isArray(fr) ? fr.length : (fr as any).rows?.length;
+    // Same query but with explicit empty params array (what VercelPool.sql passes).
+    const fr2 = await fresh(`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`, []);
+    diag.freshEmptyParamsCount = Array.isArray(fr2) ? fr2.length : (fr2 as any).rows?.length;
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;
