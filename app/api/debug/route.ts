@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { sql } from "@/lib/db";
+import { ensureSchema, sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,28 +9,18 @@ export async function GET(req: NextRequest) {
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  const pgUrl = process.env.POSTGRES_URL || "";
-  const diag: Record<string, unknown> = {
-    hasPostgresUrl: !!pgUrl,
-    // First chars only, to identify which database/host without leaking secrets.
-    postgresUrlHead: pgUrl.slice(0, 40),
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    databaseUrlHead: (process.env.DATABASE_URL || "").slice(0, 40),
-  };
+  const diag: Record<string, unknown> = {};
   try {
-    const t = await sql`
-      SELECT to_regclass('public.messages') AS tbl
+    // Exactly what /api/messages does, step by step.
+    await ensureSchema();
+    diag.afterEnsure = "ok";
+    const { rows } = await sql`
+      SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;
-    diag.table = t.rows[0]?.tbl ?? null;
-    if (diag.table) {
-      const c = await sql`SELECT COUNT(*)::int AS n FROM messages`;
-      diag.count = c.rows[0]?.n;
-      const last = await sql`
-        SELECT id, role, LEFT(text, 40) AS text, created_at
-        FROM messages ORDER BY id DESC LIMIT 3
-      `;
-      diag.last = last.rows;
-    }
+    diag.messagesQueryCount = rows.length;
+    diag.messagesQuerySample = rows.slice(0, 1);
+    const c = await sql`SELECT COUNT(*)::int AS n FROM messages`;
+    diag.countQuery = c.rows[0]?.n;
   } catch (err) {
     diag.dbError = err instanceof Error ? err.message : String(err);
   }
