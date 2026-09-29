@@ -1,5 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatGroq } from "@langchain/groq";
+import { ChatOpenAI } from "@langchain/openai";
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 export const SYSTEM_PROMPT =
@@ -7,13 +8,20 @@ export const SYSTEM_PROMPT =
 
 export type HistoryItem = { role: string; text: string };
 
-type Model = ChatGoogleGenerativeAI | ChatGroq;
+type Model = ChatGoogleGenerativeAI | ChatGroq | ChatOpenAI;
 
 /**
- * Pick the LLM from env. Gemini wins when both keys are set.
+ * Pick the LLM from env. OpenRouter wins when several keys are set.
  * Returns null when no key is configured (caller streams an error reply).
  */
 export function getModel(): Model | null {
+  if (process.env.OPENROUTER_API_KEY) {
+    return new ChatOpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      configuration: { baseURL: "https://openrouter.ai/api/v1" },
+      model: process.env.OPENROUTER_MODEL || "google/gemma-4-26b-a4b-it:free",
+    });
+  }
   if (process.env.GEMINI_API_KEY) {
     return new ChatGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,

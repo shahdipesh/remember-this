@@ -8,13 +8,15 @@ A minimal personal chat web app: chat UI with SSE-streamed assistant replies
 | Variable | Required | Purpose |
 |---|---|---|
 | `POSTGRES_URL` | Yes | Set automatically by the Vercel Postgres / Neon marketplace integration. |
-| `GEMINI_API_KEY` | One of the two | Google AI Studio key → uses `gemini-2.0-flash`. Takes precedence when both are set. |
-| `GROQ_API_KEY` | One of the two | Groq key → uses `llama-3.3-70b-versatile`. |
+| `OPENROUTER_API_KEY` | One of the three | OpenRouter key → uses `OPENROUTER_MODEL` (default `google/gemma-4-26b-a4b-it:free`). Takes precedence when several keys are set. |
+| `OPENROUTER_MODEL` | No | OpenRouter model id, e.g. `qwen/qwen3.8-27b:free`. Defaults to a free model. |
+| `GEMINI_API_KEY` | One of the three | Google AI Studio key → uses `gemini-2.0-flash`. |
+| `GROQ_API_KEY` | One of the three | Groq key → uses `llama-3.3-70b-versatile`. |
 | `CRON_SECRET` | Yes | Shared secret for `GET /api/messages?secret=...`. Generate with `openssl rand -hex 32`. |
 | `BASIC_AUTH_USER` | Yes | Username for the browser basic-auth login on `/` and `/harness`. |
 | `BASIC_AUTH_PASS` | Yes | Password for the browser basic-auth login. |
 
-If neither `GEMINI_API_KEY` nor `GROQ_API_KEY` is set, the chat replies with an
+If none of `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY` is set, the chat replies with an
 error message saying no LLM key is configured.
 
 ## API
@@ -38,8 +40,9 @@ error message saying no LLM key is configured.
 2. Go to [vercel.com](https://vercel.com) → Add New → Project → import the repo.
 3. Storage tab → add the Postgres integration (Neon marketplace). This creates
    `POSTGRES_URL` and friends automatically.
-4. Settings → Environment Variables → add `GEMINI_API_KEY` (or `GROQ_API_KEY`),
-   `CRON_SECRET`, `BASIC_AUTH_USER`, `BASIC_AUTH_PASS`.
+4. Settings → Environment Variables → add `OPENROUTER_API_KEY` (plus optional
+   `OPENROUTER_MODEL`), `CRON_SECRET`, `BASIC_AUTH_USER`, `BASIC_AUTH_PASS`.
+   (`GEMINI_API_KEY` / `GROQ_API_KEY` are alternatives to OpenRouter.)
 5. Deploy. The `messages` table is created automatically on first use
    (`schema.sql` holds the same DDL for reference).
 6. Open the URL, log in with the basic-auth credentials, send a message, and
