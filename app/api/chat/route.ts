@@ -29,9 +29,8 @@ export async function POST(req: NextRequest) {
 
   // Full prior history for context (exclude the message just inserted).
   // The requirement is the complete conversation as LLM context.
-  const { rows } = await sql`
-    SELECT role, text FROM messages ORDER BY id ASC
-  `;
+  // NOTE: SQL must not start with whitespace/newline (Neon HTTP API quirk).
+  const { rows } = await sql`SELECT role, text FROM messages ORDER BY id ASC`;
   const history: HistoryItem[] = rows
     .slice(0, -1) // exclude the message just inserted
     .map((r) => ({ role: String(r.role), text: String(r.text) }));

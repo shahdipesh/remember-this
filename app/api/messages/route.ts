@@ -1,20 +1,12 @@
 import { NextRequest } from "next/server";
+import { ensureSchema, getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-async function getDb() {
-  const { neon } = await import("@neondatabase/serverless");
-  return neon(process.env.POSTGRES_URL!, { fullResults: true });
-}
-
-let ensured = false;
-async function ensureSchema() {
-  if (ensured) return;
-  ensured = true;
-  const sql = await getDb();
-  await sql`CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, role TEXT NOT NULL, text TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW())`;
-}
-
+/**
+ * Full message history for the memory-page inbox sweep.
+ * Auth: ?secret=<CRON_SECRET> (separate from the UI basic-auth password).
+ */
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
   const expected = process.env.CRON_SECRET;
@@ -22,7 +14,8 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   await ensureSchema();
-  const q = await getDb();
-  const { rows } = await q`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
+  const sql = await getDb();
+  // NOTE: No leading whitespace in SQL (Neon HTTP API quirk).
+  const { rows } = await sql`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
   return Response.json(rows);
 }

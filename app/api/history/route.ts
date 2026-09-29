@@ -6,8 +6,6 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   await ensureSchema();
   const sql = await getDb();
-  const { rows } = await sql`
-    SELECT id, role, text, created_at FROM messages ORDER BY id ASC
-  `;
+  const { rows } = await sql`SELECT id, role, text, created_at FROM messages ORDER BY id ASC`;
   return Response.json(rows);
 }
