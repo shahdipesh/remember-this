@@ -13,5 +13,10 @@ export async function GET(req: NextRequest) {
   const { rows } = await sql`
     SELECT id, role, text, created_at FROM messages ORDER BY id ASC
   `;
-  return Response.json(rows);
+  return Response.json({
+    v: "messages-v2",
+    dbHost: (process.env.POSTGRES_URL || "").split("@")[1]?.split("/")[0] || "none",
+    count: rows.length,
+    rows,
+  });
 }
