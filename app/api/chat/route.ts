@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ensureSchema, db } from "@/lib/db";
+import { ensureSchema, getDb } from "@/lib/db";
 import { buildMessages, getModel, type HistoryItem } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
   }
 
   await ensureSchema();
-  await db`INSERT INTO messages (role, text) VALUES ('user', ${message})`;
+  const sql = await getDb();
+  await sql`INSERT INTO messages (role, text) VALUES ('user', ${message})`;
 
   // Full prior history for context (exclude the message just inserted).
   // The requirement is the complete conversation as LLM context.
-  const { rows } = await db`
+  const { rows } = await sql`
     SELECT role, text FROM messages ORDER BY id ASC
   `;
   const history: HistoryItem[] = rows
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       if (!model) {
         controller.enqueue(frame({ token: NO_KEY_MSG }));
-        await db`INSERT INTO messages (role, text) VALUES ('assistant', ${NO_KEY_MSG})`;
+        await sql`INSERT INTO messages (role, text) VALUES ('assistant', ${NO_KEY_MSG})`;
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
         return;
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
           }
         }
         if (!full) full = "(empty reply)";
-        await db`INSERT INTO messages (role, text) VALUES ('assistant', ${full})`;
+        await sql`INSERT INTO messages (role, text) VALUES ('assistant', ${full})`;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "unknown error";
         controller.enqueue(frame({ error: `LLM error: ${msg}` }));

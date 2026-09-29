@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ensureSchema, db } from "@/lib/db";
+import { ensureSchema, getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   await ensureSchema();
-  const { rows } = await db`
+  const sql = await getDb();
+  const { rows } = await sql`
     SELECT id, role, text, created_at FROM messages ORDER BY id ASC
   `;
   return Response.json(rows);
