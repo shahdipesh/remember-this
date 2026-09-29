@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
     // Exactly what /api/messages does, step by step.
     await ensureSchema();
     diag.afterEnsure = "ok";
+    const u = process.env.POSTGRES_URL || "";
+    diag.dbHost = u.split("@")[1]?.split("/")[0] || "none";
+    diag.dbName = u.split("@")[1]?.split("/")[1]?.split("?")[0] || "none";
     const { rows } = await sql`
       SELECT id, role, text, created_at FROM messages ORDER BY id ASC
     `;
