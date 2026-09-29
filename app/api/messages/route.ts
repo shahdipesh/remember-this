@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { ensureSchema, db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +12,20 @@ export async function GET(req: NextRequest) {
   if (!expected || !secret || secret !== expected) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  await ensureSchema();
-  const { rows } = await db`
+  // Inline neon() exactly as verified working (dynamic import).
+  const { neon } = await import("@neondatabase/serverless");
+  const q = neon(process.env.POSTGRES_URL!, { fullResults: true });
+  await q`
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      role TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  const result = await q`
     SELECT id, role, text, created_at FROM messages ORDER BY id ASC
   `;
+  const rows = (result as { rows: unknown[] }).rows ?? result;
   return Response.json(rows);
 }
